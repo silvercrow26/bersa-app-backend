@@ -1,14 +1,14 @@
-import { Router } from 'express';
+import { Router } from 'express'
 import {
   createCaja,
   getCajas,
   toggleCaja,
-} from './caja.controller';
+} from './caja.controller'
 
-const router = Router();
+const router = Router()
 
-router.post('/api/cajas', createCaja);
-router.get('/api/cajas', getCajas);
-router.patch('/api/cajas/:cajaId/toggle', toggleCaja);
+router.post('/api/cajas', createCaja)
+router.get('/api/cajas', getCajas)
+router.patch('/api/cajas/:cajaId/toggle', toggleCaja)
 
-export default router;
+export default router

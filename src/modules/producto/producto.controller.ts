@@ -1,10 +1,12 @@
+// src/modules/producto/producto.controller.ts
 import { Request, Response } from 'express'
 import Producto from './producto.model'
 import { inicializarStockPorProducto } from '../stock/stock.service'
+import { emitRealtimeEvent } from '../realtime/realtime.service'
 
-// ===============================
-// GET productos (POS / Admin)
-// ===============================
+/* ======================================================
+   GET productos (POS / Admin)
+====================================================== */
 export const getProductos = async (req: Request, res: Response) => {
   try {
     const { includeInactive } = req.query
@@ -15,107 +17,86 @@ export const getProductos = async (req: Request, res: Response) => {
         : { activo: true }
 
     const productos = await Producto.find(filter)
-      .populate('proveedorId', 'nombre') // 👈 CLAVE PARA ADMIN
+      .populate('proveedorId', 'nombre')
 
     res.json(productos)
   } catch (error) {
-    console.error(error)
     res.status(500).json({
       message: 'Error al obtener los productos',
-      error,
     })
   }
 }
 
-// ===============================
-// CREATE producto
-// ===============================
+/* ======================================================
+   CREATE producto
+====================================================== */
 export const createProducto = async (req: Request, res: Response) => {
   try {
-    const {
-      nombre,
-      descripcion,
-      precio,
-      categoriaId,
-      proveedorId, // 👈 NUEVO
-      activo,
-      unidadBase,
-      presentaciones,
-      reglasPrecio,
-      fechaVencimiento,
-      imagenUrl,
-      codigo,
-    } = req.body
-
     const nuevoProducto = new Producto({
-      nombre,
-      descripcion,
-      precio,
-      categoriaId,
-      proveedorId: proveedorId ?? null, // 👈 CLAVE
-      activo,
-      unidadBase,
-      presentaciones,
-      reglasPrecio,
-      fechaVencimiento,
-      imagenUrl,
-      codigo,
+      ...req.body,
+      proveedorId: req.body.proveedorId ?? null,
+      activo: req.body.activo ?? true,
     })
 
-    // crear stock en 0
     await inicializarStockPorProducto(nuevoProducto._id)
-
     await nuevoProducto.save()
+
+    emitRealtimeEvent({
+      type: 'PRODUCTO_CREATED',
+      sucursalId: 'GLOBAL',
+      origenUsuarioId: req.user._id.toString(),
+      productoId: nuevoProducto._id.toString(),
+    })
+
     res.status(201).json(nuevoProducto)
   } catch (error) {
-    console.error(error)
     res.status(500).json({
       message: 'Error al crear el producto',
-      error,
     })
   }
 }
 
-// ===============================
-// UPDATE producto
-// ===============================
+/* ======================================================
+   UPDATE producto
+====================================================== */
 export const updateProducto = async (req: Request, res: Response) => {
   try {
     const { id } = req.params
+    const { proveedorId, ...rest } = req.body
 
-    const {
-      proveedorId,
-      ...rest
-    } = req.body
-
-    const productoActualizado = await Producto.findByIdAndUpdate(
+    const producto = await Producto.findByIdAndUpdate(
       id,
       {
         ...rest,
-        proveedorId: proveedorId ?? null, // 👈 SIEMPRE SE SETEA
+        proveedorId: proveedorId ?? null,
       },
       { new: true }
     ).populate('proveedorId', 'nombre')
 
-    if (!productoActualizado) {
-      return res.status(404).json({
-        message: 'Producto no encontrado',
-      })
+    if (!producto) {
+      return res
+        .status(404)
+        .json({ message: 'Producto no encontrado' })
     }
 
-    res.json(productoActualizado)
+    emitRealtimeEvent({
+      type: 'PRODUCTO_UPDATED',
+      sucursalId: 'GLOBAL',
+      origenUsuarioId: req.user._id.toString(),
+      productoId: producto._id.toString(),
+    })
+
+    res.json(producto)
   } catch (error) {
-    console.error(error)
     res.status(500).json({
       message: 'Error al actualizar el producto',
-      error,
     })
   }
 }
 
-// ===============================
-// Buscar por código (POS)
-// ===============================
+/* ======================================================
+   Buscar producto por código (POS)
+====================================================== */
 export const buscarProductoPorCodigo = async (
   req: Request,
   res: Response
@@ -133,17 +114,16 @@ export const buscarProductoPorCodigo = async (
     }
 
     res.json(producto)
-  } catch (error) {
+  } catch {
     res.status(500).json({
       message: 'Error al buscar producto',
-      error,
     })
   }
 }
 
-// ===============================
-// Activar / desactivar producto
-// ===============================
+/* ======================================================
+   Activar / desactivar producto
+====================================================== */
 export const setProductoActivo = async (
   req: Request,
   res: Response
@@ -154,19 +134,25 @@ export const setProductoActivo = async (
 
     const producto = await Producto.findById(id)
     if (!producto) {
-      return res.status(404).json({
-        message: 'Producto no encontrado',
-      })
+      return res
+        .status(404)
+        .json({ message: 'Producto no encontrado' })
     }
 
     producto.activo = Boolean(activo)
     await producto.save()
 
+    emitRealtimeEvent({
+      type: 'PRODUCTO_UPDATED',
+      sucursalId: 'GLOBAL',
+      origenUsuarioId: req.user._id.toString(),
+      productoId: producto._id.toString(),
+    })
+
     res.json(producto)
-  } catch (error) {
+  } catch {
     res.status(500).json({
       message: 'Error al actualizar estado',
-      error,
     })
   }
 }

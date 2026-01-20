@@ -3,6 +3,12 @@ import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import { UsuarioModel } from '../usuario/usuario.model'
 
+/**
+ * Login:
+ * - Valida credenciales
+ * - Firma JWT mínimo (NO meter datos de perfil)
+ * - Devuelve User completo al frontend
+ */
 export const loginController = async (req: Request, res: Response) => {
   const { email, password } = req.body
 
@@ -26,7 +32,7 @@ export const loginController = async (req: Request, res: Response) => {
     { expiresIn: '8h' }
   )
 
-  // 🔥 COOKIE ÚNICA FUENTE DE AUTH
+  // Cookie = única fuente de auth
   res.cookie('token', token, {
     httpOnly: true,
     sameSite: 'lax',
@@ -43,8 +49,32 @@ export const loginController = async (req: Request, res: Response) => {
   })
 }
 
+/**
+ * /me
+ * Fuente de verdad post-refresh
+ * SIEMPRE devuelve User completo
+ */
 export const meController = async (req: Request, res: Response) => {
-  res.json({ user: req.user })
+  try {
+    if (!req.user?._id) {
+      return res.status(401).json({ message: 'No autenticado' })
+    }
+
+    const usuario = await UsuarioModel.findById(req.user._id)
+      .select('_id nombre rol sucursalId')
+      .lean()
+
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no encontrado' })
+    }
+
+    res.json({
+      user: usuario,
+    })
+  } catch (error) {
+    console.error('[ME]', error)
+    res.status(500).json({ message: 'Error interno' })
+  }
 }
 
 export const logoutController = (_req: Request, res: Response) => {

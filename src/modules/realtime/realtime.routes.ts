@@ -8,7 +8,7 @@ const router = Router()
  * SSE para eventos de caja por sucursal
  * GET /api/realtime/cajas
  */
-router.get('/cajas', authMiddleware, (req, res) => {
+router.get('/', authMiddleware, (req, res) => {
   const sucursalId = req.user?.sucursalId
 
   if (!sucursalId) {

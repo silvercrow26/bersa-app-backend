@@ -23,6 +23,7 @@ import corteCajaRoutes from './modules/caja/corteCaja.routes'
 import pagoRoutes from './modules/pago/pago.routes'
 import proveedorRoutes from './modules/proveedor/proveedor.routes'
 import realtimeRoutes from './modules/realtime/realtime.routes'
+import abastecimientoRoutes from './modules/abastecimiento/abastecimiento.routes'
 
 dotenv.config()
 
@@ -93,6 +94,7 @@ app.use(cierreCajaRoutes)
 app.use(corteCajaRoutes)
 app.use(pagoRoutes)
 app.use(proveedorRoutes)
+app.use(abastecimientoRoutes)
 
 /* ===============================
    Mongo + Server
