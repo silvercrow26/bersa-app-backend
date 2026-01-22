@@ -1,40 +1,46 @@
-// src/modules/producto/producto.model.ts
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document } from 'mongoose'
 
-// Interfaz para la representación de un producto
 interface Presentacion {
-  nombre: string;
-  unidades: number;
-  precioUnitario: number;
-  precioTotal: number;
+  nombre: string
+  unidades: number
+  codigoBarra?: string
+  vendible?: boolean
+  precio?: number
 }
 
 interface ReglaPrecio {
-  cantidadMinima: number;
-  precioUnitario: number;
+  cantidadMinima: number
+  precioUnitario: number
 }
 
 export interface Producto extends Document {
-  nombre: string;
-  descripcion: string;
-  precio: number;
-  categoriaId: Schema.Types.ObjectId; // Referencia a la colección Categoria
-  proveedorId?: Schema.Types.ObjectId;
-  activo: boolean;
-  unidadBase: string;
-  presentaciones: Presentacion[];
-  reglasPrecio: ReglaPrecio[];
-  fechaVencimiento?: Date;
-  imagenUrl?: string;
-  codigo: string; // Campo para el código de barras (equivalente)
+  nombre: string
+  descripcion: string
+  precio: number
+
+  categoriaId: Schema.Types.ObjectId
+  proveedorId?: Schema.Types.ObjectId
+
+  activo: boolean
+  unidadBase: string
+
+  unidadLogistica?: {
+    unidadPedido: string
+    factorUnidad: number
+    etiquetaVisible: string
+  }
+
+  presentaciones: Presentacion[]
+  reglasPrecio: ReglaPrecio[]
+
+  fechaVencimiento?: Date
+  imagenUrl?: string
+  codigo: string
 }
 
-// Definición del esquema de Producto
 const productoSchema = new Schema<Producto>({
   nombre: { type: String, required: true },
   descripcion: { type: String, required: true },
-
-  // Precio de la UNIDAD BASE (lo que vende el POS)
   precio: { type: Number, required: true },
 
   categoriaId: {
@@ -50,35 +56,35 @@ const productoSchema = new Schema<Producto>({
 
   activo: { type: Boolean, default: true },
 
-  // UNIDAD BASE DEL STOCK (UNIDAD, KG, LT, etc.)
   unidadBase: { type: String, required: true },
 
-  /**
-   * 🔥 PRESENTACIONES
-   * - logística (cajas, packs)
-   * - opcionalmente comerciales
-   */
+  unidadLogistica: {
+    unidadPedido: {
+      type: String,
+      enum: ['UNIDAD', 'PAQUETE', 'CAJA', 'MANGA', 'SACO'],
+      default: 'UNIDAD',
+    },
+    factorUnidad: {
+      type: Number,
+      default: 1,
+      min: 1,
+    },
+    etiquetaVisible: {
+      type: String,
+      default: 'unidad',
+    },
+  },
+
   presentaciones: [
     {
       nombre: { type: String, required: true },
-
-      // Cuántas unidades base representa
       unidades: { type: Number, required: true },
-
-      // Código de barras propio (caja / pack)
-      codigoBarra: { type: String },
-
-      // Si se puede vender como pack (opcional)
+      codigoBarra: String,
       vendible: { type: Boolean, default: false },
-
-      // Precio SOLO si es vendible
-      precio: { type: Number },
+      precio: Number,
     },
   ],
 
-  /**
-   * 🔥 Reglas de precio por volumen (POS)
-   */
   reglasPrecio: [
     {
       cantidadMinima: Number,
@@ -86,14 +92,10 @@ const productoSchema = new Schema<Producto>({
     },
   ],
 
-  fechaVencimiento: { type: Date },
-  imagenUrl: { type: String },
-
-  // Código de barras de la UNIDAD BASE
+  fechaVencimiento: Date,
+  imagenUrl: String,
   codigo: { type: String, required: true, unique: true },
-});
+})
 
-// Crear y exportar el modelo de Producto
-const ProductoModel = model<Producto>('Producto', productoSchema);
-
-export default ProductoModel;
+const ProductoModel = model<Producto>('Producto', productoSchema)
+export default ProductoModel

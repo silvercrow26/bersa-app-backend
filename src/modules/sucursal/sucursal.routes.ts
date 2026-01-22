@@ -1,11 +1,30 @@
-import { Router } from 'express';
-import { getSucursales, createSucursal, updateSucursal, deleteSucursal } from './sucursal.controller';
+import { Router } from 'express'
+import {
+  getSucursales,
+  createSucursal,
+  updateSucursal,
+  deleteSucursal,
+  getSucursalById,
+  getSucursalPrincipal,
+} from './sucursal.controller'
 
-const router = Router();
+const router = Router()
 
-router.get('/api/sucursales', getSucursales);
-router.post('/api/sucursales', createSucursal);
-router.put('/api/sucursales/:id', updateSucursal);
-router.delete('/api/sucursales/:id', deleteSucursal);
+/* ===============================
+   ⚠️ ESPECÍFICAS PRIMERO
+=============================== */
+router.get(
+  '/api/sucursales/principal',
+  getSucursalPrincipal
+)
 
-export default router;
+/* ===============================
+   CRUD / Contexto
+=============================== */
+router.get('/api/sucursales', getSucursales)
+router.post('/api/sucursales', createSucursal)
+router.get('/api/sucursales/:id', getSucursalById)
+router.put('/api/sucursales/:id', updateSucursal)
+router.delete('/api/sucursales/:id', deleteSucursal)
+
+export default router

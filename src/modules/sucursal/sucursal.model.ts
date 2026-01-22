@@ -6,6 +6,12 @@ interface Sucursal extends Document {
   telefono: string;
   activo: boolean;
   modoAjusteInventario: boolean;
+
+  /**
+   * Indica si esta sucursal es la bodega / sala principal
+   * (origen logístico)
+   */
+  esPrincipal: boolean;
 }
 
 const sucursalSchema = new Schema<Sucursal>({
@@ -13,10 +19,19 @@ const sucursalSchema = new Schema<Sucursal>({
   direccion: { type: String, required: true },
   telefono: { type: String, required: true },
   activo: { type: Boolean, default: true },
+
   modoAjusteInventario: {
     type: Boolean,
     default: false,
-  }
+  },
+
+  /**
+   * Flag logístico (NO hardcode)
+   */
+  esPrincipal: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const SucursalModel = model<Sucursal>('Sucursal', sucursalSchema);

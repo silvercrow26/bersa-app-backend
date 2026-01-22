@@ -24,6 +24,8 @@ import pagoRoutes from './modules/pago/pago.routes'
 import proveedorRoutes from './modules/proveedor/proveedor.routes'
 import realtimeRoutes from './modules/realtime/realtime.routes'
 import abastecimientoRoutes from './modules/abastecimiento/abastecimiento.routes'
+import pedidoInternoRoutes from './modules/pedido-interno/pedido-interno.routes'
+import despachoInternoRoutes from './modules/despacho-interno/despacho-interno.routes'
 
 dotenv.config()
 
@@ -60,9 +62,7 @@ app.use('/auth', authRoutes)
 
 /* ===============================
    Auth global (JWT)
-   - lee token desde:
-     - Authorization header
-     - cookie httpOnly (SSE)
+   - lee token desde cookie httpOnly
 =============================== */
 app.use(authMiddleware)
 
@@ -95,6 +95,8 @@ app.use(corteCajaRoutes)
 app.use(pagoRoutes)
 app.use(proveedorRoutes)
 app.use(abastecimientoRoutes)
+app.use(pedidoInternoRoutes)
+app.use(despachoInternoRoutes)
 
 /* ===============================
    Mongo + Server
