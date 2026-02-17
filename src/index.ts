@@ -38,7 +38,7 @@ const port = process.env.PORT || 5000
 const mongoUri = process.env.MONGO_URI
 
 if (!mongoUri) {
-  throw new Error('La variable de entorno MONGO_URI no está definida')
+   throw new Error('La variable de entorno MONGO_URI no está definida')
 }
 
 /* ===============================
@@ -47,10 +47,10 @@ if (!mongoUri) {
 
 // CORS (IMPORTANTE: credentials true para SSE + cookies)
 app.use(
-  cors({
-    origin: 'http://localhost:5173', // ajusta en prod
-    credentials: true,
-  })
+   app.use(cors({
+      origin: true,
+      credentials: true
+   }))
 )
 
 app.use(express.json())
@@ -71,8 +71,8 @@ app.use(authMiddleware)
    Headers comunes API
 =============================== */
 app.use('/api', (_req, res, next) => {
-  res.setHeader('Cache-Control', 'no-store')
-  next()
+   res.setHeader('Cache-Control', 'no-store')
+   next()
 })
 
 /* ===============================
@@ -104,13 +104,13 @@ app.use(despachoInternoRoutes)
    Mongo + Server
 =============================== */
 mongoose
-  .connect(mongoUri)
-  .then(() => {
-    console.log('✅ Conectado a MongoDB')
-    app.listen(port, () => {
-      console.log(`🚀 Servidor corriendo en http://localhost:${port}`)
-    })
-  })
-  .catch((error) => {
-    console.error('❌ Error al conectar a MongoDB:', error)
-  })
+   .connect(mongoUri)
+   .then(() => {
+      console.log('✅ Conectado a MongoDB')
+      app.listen(port, () => {
+         console.log(`🚀 Servidor corriendo en http://localhost:${port}`)
+      })
+   })
+   .catch((error) => {
+      console.error('❌ Error al conectar a MongoDB:', error)
+   })
