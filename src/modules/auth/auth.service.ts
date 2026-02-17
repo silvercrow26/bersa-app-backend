@@ -3,7 +3,8 @@ import jwt from 'jsonwebtoken'
 import { UsuarioModel } from '../usuario/usuario.model'
 
 export const login = async (email: string, password: string) => {
-  const usuario = await UsuarioModel.findOne({ email, activo: true })
+  const usuario = await UsuarioModel.findOne({ email })
+
 
   if (!usuario) {
     throw new Error('Usuario no encontrado')
