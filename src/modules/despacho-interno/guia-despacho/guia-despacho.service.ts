@@ -5,12 +5,12 @@ import { GuiaDespachoModel } from './guia-despacho.model'
 import SucursalModel from '../../sucursal/sucursal.model'
 import ProductoModel from '../../producto/producto.model'
 import { ContadorModel } from './contador.model'
+import { DespachoInternoModel } from '../despacho-interno.model'
 
 /* ===============================
    Types
 =============================== */
 import { TIPO_GUIA_DESPACHO } from './guia-despacho.types'
-import { DespachoInternoModel } from '../despacho-interno.model';
 
 /* =====================================================
    Obtener número correlativo
@@ -22,7 +22,8 @@ async function obtenerSiguienteNumeroGuia(): Promise<number> {
     { new: true, upsert: true }
   )
 
-  return contador.seq
+  // fallback seguro
+  return contador?.seq ?? 1
 }
 
 /* =====================================================
@@ -32,9 +33,10 @@ export async function crearGuiaDespachoDesdeDespacho(
   despachoInternoId: string,
   observacion?: string
 ) {
+  // 👇 lean + any para evitar peleas con mongoose + TS
   const despacho = await DespachoInternoModel.findById(
     despachoInternoId
-  )
+  ).lean() as any
 
   if (!despacho) {
     throw new Error('Despacho interno no encontrado')
@@ -52,6 +54,7 @@ export async function crearGuiaDespachoDesdeDespacho(
   const sucursalOrigen = await SucursalModel.findById(
     despacho.sucursalOrigenId
   )
+
   const sucursalDestino = await SucursalModel.findById(
     despacho.sucursalDestinoId
   )
@@ -65,7 +68,13 @@ export async function crearGuiaDespachoDesdeDespacho(
   /* ===============================
      Construir items
   =============================== */
-  const items = []
+
+  const items: {
+    productoId: any
+    nombreProducto: string
+    cantidad: number
+    unidad: string
+  }[] = []
 
   for (const item of despacho.items) {
     const producto = await ProductoModel.findById(
