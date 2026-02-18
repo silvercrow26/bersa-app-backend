@@ -5,10 +5,10 @@ import { authMiddleware } from './auth.middleware'
 export const authRoutes = Router()
 
 // público
-authRoutes.post('/login', loginController)
+authRoutes.post('/api/login', loginController)
 
 // protegido (usa cookie)
-authRoutes.get('/me', authMiddleware, meController)
+authRoutes.get('/api/me', authMiddleware, meController)
 
 // logout (opcionalmente protegido)
-authRoutes.post('/logout', authMiddleware, logoutController)
+authRoutes.post('/api/logout', authMiddleware, logoutController)

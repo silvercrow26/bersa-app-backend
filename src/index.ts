@@ -38,17 +38,15 @@ const port = process.env.PORT || 5000
 const mongoUri = process.env.MONGO_URI
 
 if (!mongoUri) {
-   throw new Error('La variable de entorno MONGO_URI no está definida')
+  throw new Error('La variable de entorno MONGO_URI no está definida')
 }
 
 /* ===============================
    Middlewares base
 =============================== */
-
-// CORS (IMPORTANTE: credentials true para SSE + cookies)
 app.use(cors({
-   origin: true,
-   credentials: true
+  origin: true,
+  credentials: true
 }))
 
 app.use(express.json())
@@ -57,26 +55,13 @@ app.use(cookieParser())
 /* ===============================
    Rutas públicas
 =============================== */
-app.use('/api/auth', authRoutes)
+app.use(authRoutes)        // /api/login, /api/me, etc.
+app.use(realtimeRoutes)    // /api/realtime (si lo tienes así en el router)
 
 /* ===============================
    Auth global (JWT)
 =============================== */
 app.use(authMiddleware)
-
-
-/* ===============================
-   Headers comunes API
-=============================== */
-app.use('/api', (_req, res, next) => {
-   res.setHeader('Cache-Control', 'no-store')
-   next()
-})
-
-/* ===============================
-   Realtime (SSE)
-=============================== */
-app.use('/api/realtime', realtimeRoutes)
 
 /* ===============================
    Rutas protegidas
@@ -102,13 +87,13 @@ app.use(despachoInternoRoutes)
    Mongo + Server
 =============================== */
 mongoose
-   .connect(mongoUri)
-   .then(() => {
-      console.log('✅ Conectado a MongoDB')
-      app.listen(port, () => {
-         console.log(`🚀 Servidor corriendo en http://localhost:${port}`)
-      })
-   })
-   .catch((error) => {
-      console.error('❌ Error al conectar a MongoDB:', error)
-   })
+  .connect(mongoUri)
+  .then(() => {
+    console.log('✅ Conectado a MongoDB')
+    app.listen(port, () => {
+      console.log(`🚀 Servidor corriendo en http://localhost:${port}`)
+    })
+  })
+  .catch((error) => {
+    console.error('❌ Error al conectar a MongoDB:', error)
+  })
