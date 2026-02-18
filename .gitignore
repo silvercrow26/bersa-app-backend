@@ -1,5 +1,8 @@
 node_modules
 dist
+# seeds
+seed
+src/seed
 .env
 .env.local
 .env.production
