@@ -56,7 +56,7 @@ app.use(cookieParser())
    Rutas públicas
 =============================== */
 app.use(authRoutes)        // /api/login, /api/me, etc.
-app.use(realtimeRoutes)    // /api/realtime (si lo tienes así en el router)
+app.use('/api/realtime', realtimeRoutes)    // /api/realtime (si lo tienes así en el router)
 
 /* ===============================
    Auth global (JWT)
