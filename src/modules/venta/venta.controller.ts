@@ -1,20 +1,24 @@
 import { Request, Response } from 'express'
 import { Types } from 'mongoose'
+
 import {
   crearVentaPOS,
   anularVentaPOS,
   obtenerVentaDetalle,
+  listarVentasAdmin,
+  obtenerVentaDetalleAdmin,
 } from './venta.service'
-import { listarVentasAdmin } from './venta.service'
-/* ================================
+
+/* =====================================================
    CREAR VENTA POS
-================================ */
+===================================================== */
 
 export const createVentaPOS = async (
   req: Request,
   res: Response
 ) => {
   try {
+
     const user = req.user
 
     if (!user) {
@@ -63,6 +67,7 @@ export const createVentaPOS = async (
     })
 
     return res.status(201).json(venta)
+
   } catch (e: any) {
     return res
       .status(400)
@@ -70,15 +75,16 @@ export const createVentaPOS = async (
   }
 }
 
-/* ================================
+/* =====================================================
    ANULAR VENTA POS
-================================ */
+===================================================== */
 
 export const anularVentaController = async (
   req: Request,
   res: Response
 ) => {
   try {
+
     const user = req.user
 
     if (!user) {
@@ -103,6 +109,7 @@ export const anularVentaController = async (
       message: 'Venta anulada correctamente',
       ...result,
     })
+
   } catch (e: any) {
     return res
       .status(400)
@@ -110,15 +117,16 @@ export const anularVentaController = async (
   }
 }
 
-/* ================================
-   GET DETALLE VENTA
-================================ */
+/* =====================================================
+   DETALLE VENTA POS
+===================================================== */
 
 export const getVentaDetalleController = async (
   req: Request,
   res: Response
 ) => {
   try {
+
     const { ventaId } = req.params
 
     if (!Types.ObjectId.isValid(ventaId)) {
@@ -132,6 +140,7 @@ export const getVentaDetalleController = async (
     )
 
     return res.json(venta)
+
   } catch (e: any) {
     return res
       .status(400)
@@ -139,6 +148,9 @@ export const getVentaDetalleController = async (
   }
 }
 
+/* =====================================================
+   LISTAR VENTAS ADMIN (PAGINADO)
+===================================================== */
 
 export const listarVentasAdminController = async (
   req: Request,
@@ -168,9 +180,11 @@ export const listarVentasAdminController = async (
       usuarioId,
       estado,
       tipoDocumento,
+      page,
+      limit,
     } = req.query
 
-    const ventas = await listarVentasAdmin({
+    const result = await listarVentasAdmin({
       from: from ? new Date(from as string) : undefined,
       to: to ? new Date(to as string) : undefined,
       sucursalId: sucursalId
@@ -184,9 +198,61 @@ export const listarVentasAdminController = async (
         : undefined,
       estado: estado as any,
       tipoDocumento: tipoDocumento as any,
+
+      // 👇 nuevos
+      page: page ? Number(page) : 1,
+      limit: limit ? Number(limit) : 10,
     })
 
-    return res.json(ventas)
+    res.set('Cache-Control', 'no-store')
+    return res.json(result)
+
+  } catch (e: any) {
+    return res
+      .status(400)
+      .json({ message: e.message })
+  }
+}
+
+/* =====================================================
+   DETALLE VENTA ADMIN
+===================================================== */
+
+export const getVentaDetalleAdminController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+
+    const user = req.user
+
+    if (!user) {
+      return res
+        .status(401)
+        .json({ message: 'No autenticado' })
+    }
+
+    if (user.rol !== 'ADMIN') {
+      return res
+        .status(403)
+        .json({ message: 'No autorizado' })
+    }
+
+    const { ventaId } = req.params
+
+    if (!Types.ObjectId.isValid(ventaId)) {
+      return res
+        .status(400)
+        .json({ message: 'ID inválido' })
+    }
+
+    const venta =
+      await obtenerVentaDetalleAdmin(
+        new Types.ObjectId(ventaId)
+      )
+
+    res.set('Cache-Control', 'no-store')
+    return res.json(venta)
 
   } catch (e: any) {
     return res

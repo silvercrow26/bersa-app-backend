@@ -34,11 +34,17 @@ dotenv.config()
    App
 =============================== */
 const app = express()
+
+// 🔥 Evita respuestas 304 en APIs
+app.set('etag', false)
+
 const port = process.env.PORT || 5000
 const mongoUri = process.env.MONGO_URI
 
 if (!mongoUri) {
-  throw new Error('La variable de entorno MONGO_URI no está definida')
+  throw new Error(
+    'La variable de entorno MONGO_URI no está definida'
+  )
 }
 
 /* ===============================
@@ -55,11 +61,11 @@ app.use(cookieParser())
 /* ===============================
    Rutas públicas
 =============================== */
-app.use(authRoutes)        // /api/login, /api/me, etc.
-app.use('/api/realtime', realtimeRoutes)    // /api/realtime (si lo tienes así en el router)
+app.use(authRoutes)
+app.use('/api/realtime', realtimeRoutes)
 
 /* ===============================
-   Auth global (JWT)
+   Auth global
 =============================== */
 app.use(authMiddleware)
 
@@ -91,9 +97,14 @@ mongoose
   .then(() => {
     console.log('✅ Conectado a MongoDB')
     app.listen(port, () => {
-      console.log(`🚀 Servidor corriendo en http://localhost:${port}`)
+      console.log(
+        `🚀 Servidor corriendo en http://localhost:${port}`
+      )
     })
   })
   .catch((error) => {
-    console.error('❌ Error al conectar a MongoDB:', error)
+    console.error(
+      '❌ Error al conectar a MongoDB:',
+      error
+    )
   })

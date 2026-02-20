@@ -195,17 +195,17 @@ export const crearVentaPOS = async (
     receptor:
       documentoTributario.tipo === 'FACTURA'
         ? {
-            rut: documentoTributario.receptor!.rut,
-            razonSocial:
-              documentoTributario.receptor!.razonSocial,
-            giro: documentoTributario.receptor!.giro,
-            direccion:
-              documentoTributario.receptor!.direccion,
-            comuna:
-              documentoTributario.receptor!.comuna,
-            ciudad:
-              documentoTributario.receptor!.ciudad,
-          }
+          rut: documentoTributario.receptor!.rut,
+          razonSocial:
+            documentoTributario.receptor!.razonSocial,
+          giro: documentoTributario.receptor!.giro,
+          direccion:
+            documentoTributario.receptor!.direccion,
+          comuna:
+            documentoTributario.receptor!.comuna,
+          ciudad:
+            documentoTributario.receptor!.ciudad,
+        }
         : undefined,
     requiereEmisionSii:
       documentoTributario.tipo === 'FACTURA'
@@ -360,6 +360,10 @@ interface ListarVentasAdminInput {
   usuarioId?: Types.ObjectId
   estado?: 'FINALIZADA' | 'ANULADA'
   tipoDocumento?: 'BOLETA' | 'FACTURA'
+
+  // paginación
+  page?: number
+  limit?: number
 }
 
 export const listarVentasAdmin = async (
@@ -390,20 +394,98 @@ export const listarVentasAdmin = async (
     query['documentoTributario.tipo'] =
       filtros.tipoDocumento
 
-  const ventas = await VentaModel.find(query)
-    .sort({ createdAt: -1 })
+  /* ========================
+     PAGINACIÓN
+  ======================== */
+
+  const page = filtros.page ?? 1
+  const limit = filtros.limit ?? 10
+  const skip = (page - 1) * limit
+
+  const [ventas, total] = await Promise.all([
+    VentaModel.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+
+    VentaModel.countDocuments(query),
+  ])
+
+  return {
+    data: ventas.map(v => ({
+      _id: v._id,
+      numeroVenta: v.numeroVenta,
+
+      // 🔥 IMPORTANTE
+      aperturaCajaId: v.aperturaCajaId,
+
+      total: v.total,
+      totalCobrado: v.totalCobrado,
+      estado: v.estado,
+      documentoTributario: v.documentoTributario,
+
+      usuarioId: v.usuarioId,
+      cajaId: v.cajaId,
+      sucursalId: v.sucursalId,
+
+      createdAt: v.createdAt,
+    })),
+
+    page,
+    total,
+    totalPages: Math.ceil(total / limit),
+  }
+}
+
+/* =====================================================
+   DETALLE VENTA (ADMIN)
+===================================================== */
+
+export const obtenerVentaDetalleAdmin = async (
+  ventaId: Types.ObjectId
+) => {
+
+  const venta = await VentaModel.findById(ventaId)
+    .populate('items.productoId', 'nombre')
     .lean()
 
-  return ventas.map(v => ({
-    _id: v._id,
-    numeroVenta: v.numeroVenta,
-    total: v.total,
-    totalCobrado: v.totalCobrado,
-    estado: v.estado,
-    documentoTributario: v.documentoTributario,
-    usuarioId: v.usuarioId,
-    cajaId: v.cajaId,
-    sucursalId: v.sucursalId,
-    createdAt: v.createdAt,
-  }))
+  if (!venta) {
+    throw new Error('Venta no encontrada')
+  }
+
+  const pagos = await PagoModel.find({
+    ventaId,
+  }).lean()
+
+  return {
+    _id: venta._id,
+    numeroVenta: venta.numeroVenta,
+
+    estado: venta.estado,
+
+    usuarioId: venta.usuarioId,
+    cajaId: venta.cajaId,
+    sucursalId: venta.sucursalId,
+
+    documentoTributario: venta.documentoTributario,
+
+    total: venta.total,
+    ajusteRedondeo: venta.ajusteRedondeo,
+    totalCobrado: venta.totalCobrado,
+    createdAt: venta.createdAt,
+
+    items: venta.items.map((i: any) => ({
+      productoId: i.productoId._id,
+      nombre: i.productoId.nombre,
+      cantidad: i.cantidad,
+      precioUnitario: i.precioUnitario,
+      subtotal: i.subtotal,
+    })),
+
+    pagos: pagos.map(p => ({
+      tipo: p.tipo,
+      monto: p.monto,
+    })),
+  }
 }
